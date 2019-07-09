@@ -1,0 +1,59 @@
+#outsideWrapper {
+  margin: 0 5px;
+  /* border:10px solid blue; */
+}
+#insideWrapper{
+  position:relative;}
+#coveredImage{
+  position:absolute; top:0; left:0;
+}
+#coveringCanvas{
+  position:absolute; top:0; left:0;
+  background-color: rgba(255,0,0,.1);
+}
+table {
+  width: 30%;
+}
+.txt-in {
+  width: 75px;
+  padding-right: 5px;
+}
+
+.txt-in-last {
+  width: 100%;
+  padding-right: 5px;
+}
+
+/* CDK Drag and Drop */
+.cdk-drag-preview {
+  box-sizing: border-box;
+  border-radius: 4px;
+  box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
+  0 8px 10px 1px rgba(0, 0, 0, 0.14),
+  0 3px 14px 2px rgba(0, 0, 0, 0.12);
+}
+
+.cdk-drag-placeholder {
+  opacity: 0;
+}
+
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.cdk-drop-list-dragging .mat-row:not(.cdk-drag-placeholder) {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+canvas {
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+}
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
