@@ -37,38 +37,27 @@ export class AppComponent implements OnInit {
   scale = 0.48;
   width: number;
   height: number;
-  pixelsPerMeter: number;
+  pixelsPerInch: number;
   offsetX: number;
   offsetY: number;
 
-  //Field dimens (m)
-  fieldWidth = 27;
-  fieldHeight = 54;
+  //Field dimens (in)
+  fieldWidth = 323.25;
+  fieldHeight = 629.25;
 
-  //Robot dimens (m)
-  robotWidth = 3;
-  robotLength = 3;
+  //Robot dimens (in)
+  robotWidth = 24;
+  robotLength = 30;
 
   //Starting positions
   origin = new PositionPoint(null, null, null);
   startingPositions: PositionPoint[] = [
-    new PositionPoint(10.73, 5.61,'Level 1 Left'),
-    new PositionPoint(this.fieldWidth / 2, 5.61,'Level 1 Center'),
-    new PositionPoint(this.fieldWidth - 10.73, 5.61,'Level 1 Right'),
-    new PositionPoint(9.88, 2.03,'Level 2 Left'),
-    new PositionPoint(this.fieldWidth - 9.88, 2.03,'Level 2 Right'),
+    new PositionPoint(121.98, 227.24,'Goal')
   ];
 
   //Setpoints (locking)
   setpoints: Point[] = [
-    new Point(9.84, 21.62, 90), //Ship close
-    new Point(9.84, 21.62 + 1.67, 90), //Ship middle
-    new Point(9.84, 21.62 + 2 * 1.67, 90), //Ship far
-    new Point(4.27, 18.96, -90), //Rocket cargo
-    new Point(2.66, 15.94, -31), //Rocket close
-    new Point(2.66, 21.98, -180 + 31), //Rocket far
-    new Point(12.66, 16.83, 0), //Ship center hatch
-    new Point(2.23, 1.74, 0) //Human player station
+    new Point(0, 0, 0)
   ];
 
   //Stores the canvas values (rather than the meter values) of the setpoints
@@ -77,7 +66,6 @@ export class AppComponent implements OnInit {
   //Options
   showRobotFrames = true;
   showPath = false;
-  curveScalar = 0.3;
 
   //Stores the current points in the auto program
   points: Point[] = [new Point(0, 0, 0)];
@@ -85,7 +73,7 @@ export class AppComponent implements OnInit {
   dataSource = new MatTableDataSource<Point>(this.points);
 
   //Columns to display in the point table
-  displayedColumns: string[] = ['x', 'y', 'heading', 'maxSpeed', 'minSpeed', 'turnRate', 'delete'];
+  displayedColumns: string[] = ['x', 'y', 'radius', 'speed', 'delete'];
 
   fileName: string = "buzz_auto.csv";
   assetsPath = './assets/';
@@ -94,7 +82,7 @@ export class AppComponent implements OnInit {
     //Changes the asset path when in development mode
     if(isDevMode()) this.assetsPath = './../assets/';
     //Updates the scale
-    this.scale = window.innerHeight * 5.985e-4;
+    this.scale = window.innerHeight * 0.00033;
     this.updateScale();
     //Adds the default starting position (none)
     this.startingPositions.unshift({name: null, x: 0, y: 0});
@@ -158,19 +146,20 @@ export class AppComponent implements OnInit {
           closestIndex = i;
         }
       }
-      this.points[this.points.length - 1].heading = this.setpoints[closestIndex].heading;
+      this.points[this.points.length - 1].radius = this.setpoints[closestIndex].radius;
       //this.points[this.points.length - 1].speed = this.setpoints[closestIndex].speed;
-      this.drawDot(closest.x, closest.y, this.setpoints[closestIndex].heading, -2);
-      point = this.canvasToMeters(closest.x, closest.y);
+      this.drawDot(closest.x, closest.y, this.setpoints[closestIndex].radius, -2);
+      point = this.canvasToInches(closest.x, closest.y);
     } else {
-      this.drawDot(x, y, this.points[this.points.length - 1].heading, -2);
-      point = this.canvasToMeters(x, y);
+      console.log(x + " " + y);
+      this.drawDot(x, y, this.points[this.points.length - 1].radius, -2);
+      point = this.canvasToInches(x, y);
     }
 
     this.points[this.points.length - 1].x = AppComponent.round(point.x);
     this.points[this.points.length - 1].y = AppComponent.round(point.y);
 
-    this.drawCurve();
+    //this.drawCurve();
 
     this.lastMouseX = x;
     this.lastMouseY = y;
@@ -201,8 +190,8 @@ export class AppComponent implements OnInit {
     if(this.rotateInterval === null) {
       this.rotateInterval = setInterval(() => {
         const lastPoint = this.points[this.points.length - 1];
-        if((lastPoint.heading >= -180 - amount && amount < 0) || (lastPoint.heading <= 180 - amount && amount > 0)) {
-          lastPoint.heading += amount;
+        if((lastPoint.radius >= -amount && amount < 0) || (amount > 0)) {
+          lastPoint.radius += amount;
           this.mouseMove(this.lastMouseX, this.lastMouseY);
         }
       }, 100);
@@ -221,40 +210,13 @@ export class AppComponent implements OnInit {
   draw() {
     this.clear();
     this.drawPoints(true);
-    this.drawCurve();
+    //this.drawCurve();
   }
 
   clear() {
     this.ctx.clearRect(0, 0, this.width, this.height);
   }
 
-  drawCurve() {
-    if(this.showPath) {
-      this.ctx.strokeStyle = '#f8ff3e';
-      for (let i = 0; i < this.points.length - 1; i++) {
-        const start = this.points[i];
-        const end = this.points[i + 1];
-        const dist = Math.hypot(end.x - start.x, end.y - start.y);
-
-        const ax1 = Math.cos(this.headingToTrig(start.heading)) * dist * this.curveScalar;
-        const ay1 = Math.sin(this.headingToTrig(start.heading)) * dist * this.curveScalar;
-        const ax2 = Math.cos(this.headingToTrig(end.heading)) * dist * this.curveScalar;
-        const ay2 = Math.sin(this.headingToTrig(end.heading)) * dist * this.curveScalar;
-
-        this.ctx.beginPath();
-        this.ctx.moveTo(this.xToCanvas(start.x), this.yToCanvas(start.y));
-        this.ctx.bezierCurveTo(
-          this.xToCanvas(start.x + ax1),
-          this.yToCanvas(start.y + ay1),
-          this.xToCanvas(end.x - ax1),
-          this.yToCanvas(end.y - ay2),
-          this.xToCanvas(end.x),
-          this.yToCanvas(end.y));
-        this.ctx.stroke();
-      }
-    }
-  }
-  
   headingToTrig(heading: number) {
     return (((360 - heading) + 90) / 180) * Math.PI;
   }
@@ -262,15 +224,15 @@ export class AppComponent implements OnInit {
   drawPoints(includeLast: boolean) {
     for(let i = 0; i < this.points.length + (includeLast ? 0 : -1); i++) {
       const point = this.points[i];
-      const canvasPoint = this.metersToCanvas(point.x, point.y);
-      this.drawDot(canvasPoint.x, canvasPoint.y, point.heading, i);
+      const canvasPoint = this.inchesToCanvas(point.x, point.y);
+      this.drawDot(canvasPoint.x, canvasPoint.y, point.radius, i);
     }
   }
 
   drawSetpoints() {
     this.ctx.strokeStyle = '#d6d6d6';
     this.setpointsCanvas = this.setpoints.map((setpoint) => {
-      const setpointCanvas = this.metersToCanvas(setpoint.x - this.origin.x, setpoint.y - this.origin.y);
+      const setpointCanvas = this.inchesToCanvas(setpoint.x - this.origin.x, setpoint.y - this.origin.y);
       this.ctx.beginPath();
       this.ctx.arc(setpointCanvas.x, setpointCanvas.y, 10.4 * this.scale, 0, 2 * Math.PI);
       this.ctx.stroke();
@@ -284,16 +246,19 @@ export class AppComponent implements OnInit {
     this.ctx.strokeStyle = '#000000';
     heading = 360 - heading;
     this.ctx.beginPath();
-    this.ctx.arc(x, y, 10.4 * this.scale, 0, 2 * Math.PI);
+    this.ctx.arc(x, y, 15 * this.scale, 0, 2 * Math.PI);
     this.ctx.fill();
+
+    /*
     if(this.showRobotFrames) {
       this.drawRobot(x, y, heading);
     }
+    */
   }
 
   drawRobot(x, y, heading) {
-    const widthPixels = (this.robotWidth * this.pixelsPerMeter) / 2;
-    const lengthPixels = (this.robotLength * this.pixelsPerMeter) / 2;
+    const widthPixels = (this.robotWidth * this.pixelsPerInch) / 2;
+    const lengthPixels = (this.robotLength * this.pixelsPerInch) / 2;
     this.ctx.beginPath();
     this.rotateAndPath(x, y, x - widthPixels, y - lengthPixels, heading, true);
     this.rotateAndPath(x, y, x + widthPixels, y - lengthPixels, heading, false);
@@ -313,11 +278,11 @@ export class AppComponent implements OnInit {
   }
 
   updateScale() {
-    this.width = 616 * this.scale;
-    this.height = 1500 * this.scale;
-    this.pixelsPerMeter = (20.44 /* 3.281*/) * this.scale;
-    this.offsetX = 29.167 * this.scale; /* 14 */ /* 19 */
-    this.offsetY = 200 * this.scale; /* 96 */ /* 101 */
+    this.width = 1299 * this.scale;
+    this.height = 2598 * this.scale;
+    this.pixelsPerInch = (1299 / this.fieldWidth) * this.scale;
+    this.offsetX = 0 * this.scale;
+    this.offsetY = 30 * this.scale;
   }
   //endregion
 
@@ -333,30 +298,21 @@ export class AppComponent implements OnInit {
 
   invertPoint(point: Point) {
     point.x = this.fieldWidth - point.x;
-    point.heading *= -1;
     return point;
   }
 
-  canvasToMeters(x: number, y: number) : {x: number, y: number} {
+  canvasToInches(x: number, y: number) : {x: number, y: number} {
     let output: {x: number, y: number} = {x: null, y: null};
-    output.x = ((x - this.offsetX) / this.pixelsPerMeter) - this.origin.x;
-    output.y = (((this.height - y) - this.offsetY) / this.pixelsPerMeter) - this.origin.y;
+    output.x = (((this.height - y) - this.offsetY) / this.pixelsPerInch) - this.origin.x;
+    output.y = -((x - this.offsetX) / this.pixelsPerInch) + this.fieldWidth - this.origin.y;
     return output;
   }
 
-  metersToCanvas(x: number, y: number) : {x: number, y: number} {
+  inchesToCanvas(x: number, y: number) : {x: number, y: number} {
     let output: {x: number, y: number} = {x: null, y: null};
-    output.x = this.xToCanvas(x);
-    output.y = this.yToCanvas(y);
+    output.x = (-(y - this.fieldWidth + this.origin.y) * this.pixelsPerInch) + this.offsetX;
+    output.y = this.height - (((x + this.origin.x) * this.pixelsPerInch) + this.offsetY);
     return output;
-  }
-
-  xToCanvas(x: number) {
-    return ((x + this.origin.x) * this.pixelsPerMeter) + this.offsetX;
-  }
-
-  yToCanvas(y: number) {
-    return this.height - (((y + this.origin.y) * this.pixelsPerMeter) + this.offsetY);
   }
   //endregion
 
@@ -507,21 +463,14 @@ export class AppComponent implements OnInit {
 class Point {
   public x: number;
   public y: number;
-  public heading: number;
-  public minSpeed: number;
-  public maxSpeed: number;
-  public turnRate: number;
-
-  constructor(x: number, y: number, heading: number/*, minSpeed: number, maxSpeed: number, turnRate: number*/) {
+  public radius: number;
+  public speed: number;
+  constructor(x: number, y: number, radius: number) {
     this.x = x;
     this.y = y;
-    this.heading = heading;
-    //this.minSpeed = minSpeed;
-    //this.maxSpeed = maxSpeed;
-    //this.turnRate = turnRate;
+    this.radius = radius;
   }
 }
-
 
 class PositionPoint {
   public x: number;
@@ -534,4 +483,3 @@ class PositionPoint {
     this.name = name;
   }
 }
-

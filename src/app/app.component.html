@@ -3,7 +3,7 @@
     <mat-card>
       <div id="outsideWrapper" class="mat-elevation-z3" [style.width.px]="width" [style.height.px]="height">
         <div id="insideWrapper" [style.width.px]="width" [style.height.px]="height">
-          <img src="{{assetsPath}}image.jpg" id="coveredImage" alt="" [style.width.px]="width" [style.height.px]="height">
+          <img src="{{assetsPath}}field.png" id="coveredImage" alt="" [style.width.px]="width" [style.height.px]="height">
           <canvas #coveringCanvas id="coveringCanvas" (mousemove)="mouseMove($event.offsetX, $event.offsetY)" (mouseenter)="mouseEnter()" (mouseleave)="mouseLeave()" (mouseup)="mouseUp()" width={{width}} height={{height}}></canvas>
         </div>
       </div>
@@ -53,38 +53,20 @@
           </td>
         </ng-container>
 
-        <ng-container matColumnDef="heading">
-          <th mat-header-cell *matHeaderCellDef>Heading</th>
+        <ng-container matColumnDef="radius">
+          <th mat-header-cell *matHeaderCellDef>Radius</th>
           <td mat-cell *matCellDef="let point">
             <mat-form-field class="txt-in" [style.width.px]="60">
-              <input matInput #heading="ngModel" [(ngModel)]="point.heading" (ngModelChange)="draw()" type="number">
+              <input matInput #heading="ngModel" [(ngModel)]="point.radius" (ngModelChange)="draw()" type="number">
             </mat-form-field>
           </td>
         </ng-container>
 
-        <ng-container matColumnDef="maxSpeed">
-          <th mat-header-cell *matHeaderCellDef>Max Speed</th>
+        <ng-container matColumnDef="speed">
+          <th mat-header-cell *matHeaderCellDef>Speed</th>
           <td mat-cell *matCellDef="let point">
             <mat-form-field class="txt-in">
-              <input matInput #maxSpeed="ngModel" [(ngModel)]="point.maxSpeed" type="number">
-            </mat-form-field>
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="minSpeed">
-          <th mat-header-cell *matHeaderCellDef>Min Speed</th>
-          <td mat-cell *matCellDef="let point">
-            <mat-form-field class="txt-in">
-              <input matInput #minSpeed="ngModel" [(ngModel)]="point.minSpeed" type="number">
-            </mat-form-field>
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="turnRate">
-          <th mat-header-cell *matHeaderCellDef>Turn Rate</th>
-          <td mat-cell *matCellDef="let point">
-            <mat-form-field class="txt-in">
-              <input matInput #turnRate="ngModel" [(ngModel)]="point.turnRate" type="number">
+              <input matInput #speed="ngModel" [(ngModel)]="point.speed" type="number">
             </mat-form-field>
           </td>
         </ng-container>
@@ -100,8 +82,7 @@
 
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
         <tr mat-row cdkDrag [attr.index]='i' (mouseenter)="handleRowSelect(i)" (mouseleave)="handleRowLeave()" (keypress)="handleRowInput($event.key, i)"
-            [style.background-color]="even ? '#efefef' : '#ffffff'"
-            *matRowDef="let row; columns: displayedColumns; let point; let i = index; let even = even;">
+            *matRowDef="let row; columns: displayedColumns; let point; let i = index; let even = even;" >
           <mat-card *cdkDragPreview>
             ({{point.x != null ? point.x : '?'}}, {{point.y != null ? point.y : '?'}})
           </mat-card>
@@ -150,10 +131,6 @@
 
         <mat-form-field>
           <input matInput type="number" placeholder="Robot Length (m)" [(ngModel)]="robotLength" (ngModelChange)="draw()">
-        </mat-form-field>
-
-        <mat-form-field>
-          <input matInput type="number" placeholder="Curve Scalar" [(ngModel)]="curveScalar" (ngModelChange)="draw()">
         </mat-form-field>
       </div>
     </mat-expansion-panel>
